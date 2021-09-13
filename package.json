@@ -1,0 +1,33 @@
+{
+  "name": "sir-orm",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:FrankFang/sir_orm.git",
+  "author": "frankfang <frankfang1990@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "build": "swc -o dist/index.js lib/index.ts",
+    "build:watch": "swc -w -o dist/index.js lib/index.ts",
+    "db:create": "mysql -u root -h mysql1 -p -e 'CREATE DATABASE oh_my_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;'",
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "dependencies": {
+    "knex": "^0.95.11",
+    "lodash": "^4.17.21",
+    "mysql": "^2.18.1"
+  },
+  "devDependencies": {
+    "@swc/cli": "^0.1.49",
+    "@swc/core": "^1.2.85",
+    "@swc/jest": "^0.2.3",
+    "@tsconfig/node14": "^1.0.1",
+    "@types/jest": "^27.0.1",
+    "@types/lodash": "^4.14.172",
+    "@types/node": "^16.9.1",
+    "chokidar": "^3.5.2",
+    "chokidar-cli": "^3.0.0",
+    "eslint": "^7.32.0",
+    "jest": "^27.1.1"
+  }
+}

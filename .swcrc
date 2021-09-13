@@ -1,0 +1,28 @@
+{
+  "env": {
+    "targets": {
+      "node": "12"
+    },
+    "mode": "entry",
+    "coreJs": 3
+  },
+  "module": {
+    "type": "commonjs",
+    "strict": false,
+    "strictMode": true,
+    "lazy": false,
+    "noInterop": false
+  },
+  "sourceMaps": false,
+  "jsc": {
+    "parser": {
+      "syntax": "typescript",
+      "tsx": false
+    },
+    "transform": null,
+    "target": "es5",
+    "loose": false,
+    "externalHelpers": false,
+    "keepClassNames": false
+  }
+}
