@@ -31,7 +31,7 @@ describe('Model Class', () => {
   })
   it('gets many records', async () => {
     await User.destroyAll() 
-    await User.create(
+    await User.createMany(
       { name: 'frank' },
       { name: 'jack' },
       { name: 'xiaoming' }

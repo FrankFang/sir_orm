@@ -1,6 +1,11 @@
+import { pick } from 'lodash';
 import { DatabaseClient } from "./databaseClient"
 let client: DatabaseClient | null = null
-export class Base {
+interface X {
+  [key: string]: unknown
+}
+export class Base implements X{
+  [key: string]: unknown;
   static primaryKey = 'id'
   static get tableName() {
     return s(x(this.name))
@@ -17,11 +22,14 @@ export class Base {
   static get all() {
     return this.knex.select('*')
   }
-  static create<T extends typeof Base>(this: T, ...propsList: any[]) {
+  static createMany<T extends typeof Base>(this: T, ...propsList: any) {
     return this.knex.insert(propsList)
       .then(idList =>
         idList.map((id, index) => new this({ ...propsList[index], id }))
-      ).then(modelList => modelList.length <= 1 ? modelList[0] : modelList)
+      )
+  }
+  static create<T extends typeof Base>(this: T, props: any) {
+    return this.createMany(props).then(a => a[0])
   }
   static first() {
     return this.knex.first().then(r => r && new this(r))
@@ -58,13 +66,24 @@ export class Base {
   }
   static doQuery() {
   }
-  constructor(props: any) {
+  constructor(props?: any) {
     Object.assign(this, props)
   }
   destroy() {
     const theClass = (this.constructor as unknown as typeof Base)
     const { primaryKey } = theClass
     return theClass.destroyBy({ [primaryKey]: (this as any)[primaryKey] })
+  }
+  save() {
+    const theClass = (this.constructor as unknown as typeof Base)
+    return theClass.knex.columnInfo().then(cols => {
+      const props = pick(this, Object.keys(cols))
+      return theClass.create(props)
+    })
+  }
+  update(props: unknown){
+    const theClass = (this.constructor as unknown as typeof Base)
+    return theClass.update(this.id, props)
   }
 }
 
