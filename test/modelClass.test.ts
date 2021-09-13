@@ -1,9 +1,9 @@
 import { Base } from '../lib/base';
-describe('models', () => {
+describe('Model Class', () => {
   class User extends Base { }
   it('creates a record', async () => {
     const r1 = await User.all
-    await User.create({ name: 'frank' })
+    await User.create({ name: 'frank' }) 
     const r2 = await User.all
     expect(r2.length - r1.length).toEqual(1)
   })
