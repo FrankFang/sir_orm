@@ -1,4 +1,4 @@
-import { Base } from './../lib/base';
+import { Base } from '../lib/base';
 describe('models', () => {
   class User extends Base { }
   it('creates a record', async () => {
@@ -30,7 +30,7 @@ describe('models', () => {
     expect(user).toBeNull()
   })
   it('gets many records', async () => {
-    await User.destroyAll()
+    await User.destroyAll() 
     await User.create(
       { name: 'frank' },
       { name: 'jack' },
