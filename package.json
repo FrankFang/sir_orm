@@ -10,7 +10,8 @@
     "build:watch": "swc -w -o dist/index.js lib/index.ts",
     "db:create": "mysql -u root -h mysql1 -p -e 'CREATE DATABASE sir_orm_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;'",
     "test": "jest --runInBand",
-    "test:watch": "jest --watch --runInBand"
+    "test:watch": "jest --watch --runInBand",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "knex": "^0.95.11",
