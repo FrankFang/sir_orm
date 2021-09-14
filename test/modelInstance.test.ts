@@ -5,7 +5,7 @@ describe('Model Instance', () => {
   beforeEach(async () => {
     await ensureDb()
     Base.client = getClient()
-    await Base.client.createTable('users', {
+    await Base.client.createTableIfNotExists('users', {
       name: 'string', age: 'int'
     }, {increments: true, timestamps: true})
   })
@@ -13,18 +13,23 @@ describe('Model Instance', () => {
     await destroyDb()
     Base.client.destroy()
   })
-  it('can save', async () => {
+  it('can create a record with #save method', async () => {
     const user = new User()
     await user.save()
     const user2 = await User.first()
     expect(user2['id']).toBeTruthy()
   })
-  it('can destroy', async () => {
+  it('can create a record with User.create', async () => {
+    const user = await User.create({})
+    const user2 = await User.first()
+    expect(user2['id']).toBeTruthy()
+  })
+  it('can destroy a record', async () => {
     const user = await User.create({ name: 'frank' })
     expect((await User.all).length).toEqual(1)
     await user.destroy()
   })
-  it('can update', async () => {
+  it('can update a record', async () => {
     const user = await User.create({ name: 'frank' })
     await user.update({ name: 'jack' })
     const user2 = await User.find({ name: 'jack' })

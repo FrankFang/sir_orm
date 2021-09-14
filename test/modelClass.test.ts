@@ -5,7 +5,7 @@ describe('Model Class', () => {
   beforeEach(async () => {
     await ensureDb()
     Base.client = getClient()
-    await Base.client.createTable('users', {
+    await Base.client.createTableIfNotExists('users', {
       name: 'string', age: 'int'
     }, {increments: true, timestamps: true})
   })
@@ -42,7 +42,6 @@ describe('Model Class', () => {
     expect(user).toBeNull()
   })
   it('gets many records', async () => {
-    await User.destroyAll() 
     await User.createMany(
       { name: 'frank' },
       { name: 'jack' },

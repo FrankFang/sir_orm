@@ -45,43 +45,50 @@ export class DatabaseClient extends EventEmitter {
   hasDatabase(name: string) {
     return this.exec(`SHOW DATABASES LIKE ?`, name).then(r => r[0].length !== 0)
   }
-  // createTable('users', {name: {type:'varchar', length: 100, notNull: true}}, {timestamps: true, increments: true})
-  createTable(name: string, columns: { [k: string]: ColumnOptions | ColumnOptions['type'] }, options?: TableOptions) {
-    return this.knex.schema.createTable(name, t => {
-      Object.entries(columns ?? []).map(([colName, options]) => {
-        if (typeof options === 'string') { options = { type: options } }
-        switch (options.type) {
-          case 'string':
-            t.string(colName)
-            break;
-          case 'int':
-            t.integer(colName)
-            break;
-          case 'bigint':
-            t.bigInteger(colName)
-            break;
-          default:
-            break;
-        }
-      })
-      Object.entries(options ?? []).map(([option, value]) => {
-        switch (option) {
-          case 'timestamps':
-            value && t.timestamps()
-            break;
-          case 'increments':
-            value && t.increments()
-            break;
-        }
-      })
-    })
+  createTableIfNotExists(name: string, columns: Columes, options?: TableOptions) {
+    return this.knex.schema.hasTable(name).then(has =>
+      has ? null : this.createTable(name, columns, options)
+    )
+  }
+  createTable(name: string, columns: Columes, options?: TableOptions) {
+    return this.knex.schema.createTable(
+      name, t => buildTable(t, columns, options))
   }
   exec(sql: string, ...bindings: string[]) {
     return this.knex.raw(sql, bindings)
   }
 
 }
+const buildTable = (t: Knex.CreateTableBuilder, columns: Columes, options?: TableOptions) => {
+  Object.entries(columns ?? []).map(([colName, options]) => {
+    if (typeof options === 'string') { options = { type: options } }
+    switch (options.type) {
+      case 'string':
+        t.string(colName)
+        break;
+      case 'int':
+        t.integer(colName)
+        break;
+      case 'bigint':
+        t.bigInteger(colName)
+        break;
+      default:
+        break;
+    }
+  })
+  Object.entries(options ?? []).map(([option, value]) => {
+    switch (option) {
+      case 'timestamps':
+        value && t.timestamps()
+        break;
+      case 'increments':
+        value && t.increments()
+        break;
+    }
+  })
+}
 
+type Columes = { [k: string]: ColumnOptions | ColumnOptions['type'] }
 type ColumnOptions = {
   type: 'string' | 'int' | 'bigint';
   notNull?: boolean;

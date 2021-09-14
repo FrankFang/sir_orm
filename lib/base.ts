@@ -29,7 +29,7 @@ export class Base implements X {
         idList.map((id, index) => new this({ ...propsList[index], id }))
       )
   }
-  static create<T extends typeof Base>(this: T, props: any) {
+  static create<T extends typeof Base>(this: T, props?: any) {
     return this.createMany(props).then(a => a[0])
   }
   static first() {
