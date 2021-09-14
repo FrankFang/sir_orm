@@ -18,7 +18,7 @@ export class Base implements Indexable {
   static get tableName() {
     return s(x(this.name))
   }
-  static _client: DatabaseClient
+  private static _client: DatabaseClient
   static get client() {
     return this._client
   }
