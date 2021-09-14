@@ -1,4 +1,3 @@
-import { databaseClient } from './databaseClient';
 import { Base } from './base';
 
 
@@ -10,17 +9,8 @@ class Article extends Base {
 }
 // users id:bigint name:string age:int
 async function main() {
-  // await User.create({ name: 'frank' })
-  // console.log(await User.all)
-  const u1 = await User.first()
-  if(!u1) return
-  await u1.destroy()
-  console.log('已删除')
-  console.log(await User.all)
-  // process.exit()
 }
-main().finally(()=>{
-  databaseClient.destroy()
+main().finally(() => {
 })
 
 process.on('exit', function () {

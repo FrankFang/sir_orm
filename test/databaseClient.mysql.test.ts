@@ -1,19 +1,16 @@
+import { ensureDb, destroyDb, getClient, connectToServer } from './helper';
 import { DatabaseClient } from '../lib/databaseClient';
 describe('databaseClient', () => {
-  const dbName = 'sir_db'
+  const dbName = 'sir_db_1'
   describe('manipulate database.', () => {
-    let client
+    let client: DatabaseClient
     beforeEach(() => {
-      const config = {
-        dialect: 'mysql',
-        host: 'mysql1', port: 3306, password: '123456', user: 'root'
-      } as const
-      client = new DatabaseClient(config)
+      client = connectToServer()
     })
     afterEach(() => {
       client.destroy()
     })
-    it('detects database', async () => {
+    it('can detect a database', async () => {
       expect.assertions(3);
       await expect(client.hasDatabase(dbName))
         .resolves.toBe(false)
@@ -21,22 +18,30 @@ describe('databaseClient', () => {
         .resolves.toBeTruthy()
       await expect(client.hasDatabase(dbName))
         .resolves.toBe(true)
-      await client.dropDatabase(dbName)
+      await client.destroyDatabase(dbName)
     })
-    it('creates database', async () => {
+    it('can create a database', async () => {
       expect.assertions(2);
+      client.createDatabaseIfNotExists(dbName)
       await expect(client.createDatabaseIfNotExists(dbName))
         .resolves.toBeTruthy()
       await expect(client.createDatabase(dbName))
         .rejects.toThrowError(/database exists/)
     })
-    it('drops database', async () => {
+    it('can destroy a database', async () => {
       expect.assertions(2);
       await expect(client.createDatabaseIfNotExists(dbName))
         .resolves.toBeTruthy()
-      await expect(client.dropDatabase(dbName))
+      await expect(client.destroyDatabase(dbName))
         .resolves.toBeTruthy()
-
     })
   })
+  // describe('minipulate tables.', () => {
+  //   beforeEach(async () => {
+  //     await ensureDb()
+  //   })
+  //   afterEach(async () => {
+  //     await destroyDb()
+  //   })
+  // })
 })

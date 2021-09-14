@@ -4,20 +4,21 @@ let client: DatabaseClient | null = null
 interface X {
   [key: string]: unknown
 }
-export class Base implements X{
+export class Base implements X {
   [key: string]: unknown;
   static primaryKey = 'id'
   static get tableName() {
     return s(x(this.name))
   }
+  static _client: DatabaseClient
+  static get client() {
+    return this._client
+  }
+  static set client(newClient: DatabaseClient) {
+    this._client = newClient
+  }
   static get knex() {
-    const config = {
-      dialect: 'mysql',
-      host: 'mysql1', port: 3306, password: '123456', user: 'root',
-      database: 'oh_my_db'
-    } as const
-    client = client ?? new DatabaseClient(config)
-    return client.knex(this.tableName)
+    return this.client.knex(this.tableName)
   }
   static get all() {
     return this.knex.select('*')
@@ -81,7 +82,7 @@ export class Base implements X{
       return theClass.create(props)
     })
   }
-  update(props: unknown){
+  update(props: unknown) {
     const theClass = (this.constructor as unknown as typeof Base)
     return theClass.update(this.id, props)
   }

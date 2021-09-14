@@ -1,6 +1,18 @@
+import { ensureDb, destroyDb, getClient, connectToServer } from './helper';
 import { Base } from '../lib/base';
 describe('Model Class', () => {
   class User extends Base { }
+  beforeEach(async () => {
+    await ensureDb()
+    Base.client = getClient()
+    await Base.client.createTable('users', {
+      name: 'string', age: 'int'
+    }, {increments: true, timestamps: true})
+  })
+  afterEach(async () => {
+    await destroyDb()
+    Base.client.destroy()
+  })
   it('creates a record', async () => {
     const r1 = await User.all
     await User.create({ name: 'frank' }) 

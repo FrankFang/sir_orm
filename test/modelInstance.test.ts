@@ -1,8 +1,17 @@
+import { ensureDb, destroyDb, getClient } from './helper';
 import { Base } from './../lib/base';
 describe('Model Instance', () => {
   class User extends Base { }
   beforeEach(async () => {
-    await User.destroyAll()
+    await ensureDb()
+    Base.client = getClient()
+    await Base.client.createTable('users', {
+      name: 'string', age: 'int'
+    }, {increments: true, timestamps: true})
+  })
+  afterEach(async () => {
+    await destroyDb()
+    Base.client.destroy()
   })
   it('can save', async () => {
     const user = new User()
