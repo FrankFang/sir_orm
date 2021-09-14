@@ -19,7 +19,7 @@ export class DatabaseClient extends EventEmitter {
       client: config.dialect,
       connection: pick(config,
         ['host', 'port', 'user', 'password', 'database']),
-      pool: config.pool
+      pool: config.pool,
     });
   }
   destroy() {

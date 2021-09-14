@@ -1,12 +1,15 @@
 import { pick } from 'lodash';
 import { DatabaseClient } from "./databaseClient"
-let client: DatabaseClient | null = null
 interface Indexable {
   [key: string]: unknown
 }
 type Callback = (obj: Base) => void
+const returnTrue = () => true
+const returnFalse = () => false
+const returnFirst = (a: nay) => a?.[0] ?? null
+
 export class Base implements Indexable {
-  [key: string]: unknown;
+  [key: string]: any;
   static primaryKey = 'id'
   constructor(callback: Callback);
   constructor(props: Indexable, callback?: Callback);
@@ -31,70 +34,70 @@ export class Base implements Indexable {
   static get all() {
     return this.knex.select('*')
   }
-  static createMany(propsList: any[], callback?: Callback) {
-    const instanceList = propsList.map(props => new this(props, callback))
-    return this.knex.insert(instanceList)
-      .then(idList =>
-        instanceList.map((instance, index) => {
-          instance.id = idList[index]
-          return instance
-        })
-      )
+  static async createMany<T extends typeof Base>(this: T, propsList: any[], callback?: Callback): Promise<InstanceType<T>[]> {
+    const result = []
+    for (let i = 0; i < propsList.length; i++) {
+      const props = propsList[i]
+      result.push(await this.create(props, callback))
+    }
+    return result
   }
-  static create(callback?: Callback): Promise<Base>;
-  static create(props?: Indexable, callback?: Callback): Promise<Base>;
-  static create(props?: any, callback?: Callback): Promise<Base> {
+  static create<T extends typeof Base>(this: T, callback?: Callback): Promise<InstanceType<T>>;
+  static create<T extends typeof Base>(this: T, props?: Indexable, callback?: Callback): Promise<InstanceType<T>>;
+  static create<T extends typeof Base>(this: T, props?: any, callback?: Callback): Promise<InstanceType<T>> {
     if (typeof props === 'function') { [props, callback] = [{}, props] }
-    return this.createMany([props ?? {}], callback).then(a => a[0])
+    const obj = new this(props, callback) as InstanceType<T>
+    return obj.save().finally(() => obj)
   }
-  static first() {
+  static first<T extends typeof Base>(this: T): Promise<InstanceType<T>> {
     return this.knex.first().then(r => r && new this(r))
   }
-  static second() {
-    return this.knex.limit(1).offset(1)
+  static second<T extends typeof Base>(this: T): Promise<InstanceType<T>> {
+    return this.knex.limit(1).offset(1).then(r => r && new this(r[0]) as InstanceType<T>)
   }
-  static third() {
-    return this.knex.limit(1).offset(2)
+  static third<T extends typeof Base>(this: T): Promise<InstanceType<T>> {
+    return this.knex.limit(1).offset(2).then(r => r && new this(r[0]) as InstanceType<T>)
   }
-  static head(n: number) {
+  static head<T extends typeof Base>(this: T, n: number): Promise<InstanceType<T>[]> {
     return this.knex.limit(n)
   }
-  static find(id: any) {
+  static find<T extends typeof Base>(this: T, id: any): Promise<InstanceType<T>> {
     return this.knex.where({ id }).then(r => r?.[0] ?? null)
   }
-  static findBy(props: any) {
+  static findBy<T extends typeof Base>(this: T, props: any): Promise<InstanceType<T>> {
     return this.knex.where(props).then(r => r?.[0] ?? null)
   }
-  static where(props: any) {
-    return this.knex.where(props)
+  static where<T extends typeof Base>(this: T, props: any): Promise<InstanceType<T>[]> {
+    return this.knex.where(props).then(rs => rs.map(r => r && new this(r) as InstanceType<T>))
   }
-  static updateAll(props: any) {
-    return this.knex.update(props)
+  static updateAll(props: Indexable) {
+    return this.knex.update(props).then(returnTrue, returnFalse)
   }
-  static update(id: any, props: any) {
-    return this.knex.where({ id }).update(props)
+  static update(id: any, props: Indexable) {
+    return this.knex.where({ id }).update(props).then(returnTrue, returnFalse)
   }
   static destroyBy(props: any) {
-    return this.knex.where(props).del()
+    return this.knex.where(props).del().then(returnTrue, returnFalse)
   }
   static destroyAll() {
-    return this.knex.del()
-  }
-  static doQuery() {
+    return this.knex.del().then(returnTrue, returnFalse)
   }
   destroy() {
     const theClass = (this.constructor as unknown as typeof Base)
     const { primaryKey } = theClass
     return theClass.destroyBy({ [primaryKey]: (this as any)[primaryKey] })
   }
-  save() {
-    const theClass = (this.constructor as unknown as typeof Base)
+  save<T extends Base>(this: T) {
+    const theClass = this.constructor as unknown as typeof Base
     return theClass.knex.columnInfo().then(cols => {
       const props = pick(this, Object.keys(cols))
-      return theClass.create(props)
+      return theClass.knex.insert(props).then(returnFirst).then(id => {
+        (this as Base).id = id
+        return this
+      }) as Promise<T>
     })
   }
-  update(props: unknown) {
+  update(props: Indexable) {
     const theClass = (this.constructor as unknown as typeof Base)
     return theClass.update(this.id, props)
   }
