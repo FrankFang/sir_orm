@@ -13,8 +13,13 @@ export const connectToServer = (config?: DatabaseConfig) => {
 }
 export const getClient = (config?: DatabaseConfig) => {
   if (clientCache[0]) { return clientCache[0] }
-  const client = new DatabaseClient(config ?? testConfig)
-  client.on('after:destroy', () => delete clientCache[0])
+  const client = clientCache[0] = new DatabaseClient(config ?? testConfig)
+  const onExit = () => client.destroy()
+  client.on('after:destroy', () => {
+    process.off('exit', onExit)
+    delete clientCache[0]
+  })
+  process.on('exit', onExit)
   return client
 }
 export const destroyClient = () => {

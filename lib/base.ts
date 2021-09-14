@@ -1,12 +1,20 @@
 import { pick } from 'lodash';
 import { DatabaseClient } from "./databaseClient"
 let client: DatabaseClient | null = null
-interface X {
+interface Indexable {
   [key: string]: unknown
 }
-export class Base implements X {
+type Callback = (obj: Base) => void
+export class Base implements Indexable {
   [key: string]: unknown;
   static primaryKey = 'id'
+  constructor(callback: Callback);
+  constructor(props: Indexable, callback?: Callback);
+  constructor(props?: any, callback?: Callback) {
+    if (typeof props === 'function') { [props, callback] = [{}, props] }
+    Object.assign(this, props)
+    callback?.call(null, this)
+  }
   static get tableName() {
     return s(x(this.name))
   }
@@ -23,14 +31,21 @@ export class Base implements X {
   static get all() {
     return this.knex.select('*')
   }
-  static createMany<T extends typeof Base>(this: T, ...propsList: any) {
-    return this.knex.insert(propsList)
+  static createMany(propsList: any[], callback?: Callback) {
+    const instanceList = propsList.map(props => new this(props, callback))
+    return this.knex.insert(instanceList)
       .then(idList =>
-        idList.map((id, index) => new this({ ...propsList[index], id }))
+        instanceList.map((instance, index) => {
+          instance.id = idList[index]
+          return instance
+        })
       )
   }
-  static create<T extends typeof Base>(this: T, props?: any) {
-    return this.createMany(props).then(a => a[0])
+  static create(callback?: Callback): Promise<Base>;
+  static create(props?: Indexable, callback?: Callback): Promise<Base>;
+  static create(props?: any, callback?: Callback): Promise<Base> {
+    if (typeof props === 'function') { [props, callback] = [{}, props] }
+    return this.createMany([props ?? {}], callback).then(a => a[0])
   }
   static first() {
     return this.knex.first().then(r => r && new this(r))
@@ -66,9 +81,6 @@ export class Base implements X {
     return this.knex.del()
   }
   static doQuery() {
-  }
-  constructor(props?: any) {
-    Object.assign(this, props)
   }
   destroy() {
     const theClass = (this.constructor as unknown as typeof Base)

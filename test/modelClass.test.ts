@@ -7,7 +7,7 @@ describe('Model Class', () => {
     Base.client = getClient()
     await Base.client.createTableIfNotExists('users', {
       name: 'string', age: 'int'
-    }, {increments: true, timestamps: true})
+    }, { increments: true, timestamps: true })
   })
   afterEach(async () => {
     await destroyDb()
@@ -15,7 +15,7 @@ describe('Model Class', () => {
   })
   it('creates a record', async () => {
     const r1 = await User.all
-    await User.create({ name: 'frank' }) 
+    await User.create({ name: 'frank' })
     const r2 = await User.all
     expect(r2.length - r1.length).toEqual(1)
   })
@@ -42,11 +42,11 @@ describe('Model Class', () => {
     expect(user).toBeNull()
   })
   it('gets many records', async () => {
-    await User.createMany(
+    await User.createMany([
       { name: 'frank' },
       { name: 'jack' },
       { name: 'xiaoming' }
-    )
+    ])
     const userList = await User.all
     expect(userList.length).toBe(3)
   })
