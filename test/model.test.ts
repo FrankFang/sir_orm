@@ -1,21 +1,28 @@
 import { ensureDb, destroyDb, getClient } from './helper';
-import { Base } from './../lib/base';
+import { Base } from '../lib/base';
 describe('Model Instance', () => {
-  class User extends Base { }
-  beforeEach(async () => {
+  beforeAll(async () => {
     await ensureDb()
     Base.client = getClient()
+  })
+  beforeEach(async () => {
     await Base.client.createTableIfNotExists('users', {
       name: 'string', age: 'int'
     }, { increments: true, timestamps: true })
+    await Base.client.knex.schema.hasTable('users')
   })
-  afterEach(async () => {
+  afterEach(async() => {
+    await Base.client.destroyTable('users')
+  })
+  afterAll(async() => {
     await destroyDb()
-    Base.client.destroy()
+    await Base.client.destroy()
   })
+  class User extends Base { }
   it('can create a record with #save method', async () => {
     const user = new User(u => u.name = 'frank')
-    await user.save()
+    const result = await user.save()
+    expect(result).toBe(true)
     const user2 = await User.first()
     expect(user2['id']).toBeTruthy()
     expect(user2['name']).toBe('frank')
@@ -28,7 +35,8 @@ describe('Model Instance', () => {
   })
   it('can destroy a record', async () => {
     const user = await User.create({ name: 'frank' })
-    expect((await User.all).length).toEqual(1)
+    expect(user.isPersisted).toBe(true)
+    expect((await User.all.promise).length).toEqual(1)
     await user.destroy()
   })
   it('can update a record', async () => {

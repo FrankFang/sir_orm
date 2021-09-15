@@ -9,7 +9,8 @@
     "build": "swc -d dist lib/*.ts lib/**/*.ts",
     "build:watch": "swc -w -d dist lib/*.ts lib/**/*.ts",
     "db:create": "mysql -u root -h mysql1 -p -e 'CREATE DATABASE sir_orm_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;'",
-    "test": "jest --runInBand --coverage",
+    "test": "jest --runInBand",
+    "test:coverage": "jest --runInBand --coverage",
     "test:watch": "jest --watch --runInBand",
     "typecheck": "tsc --noEmit"
   },
@@ -29,6 +30,7 @@
     "chokidar": "^3.5.2",
     "chokidar-cli": "^3.0.0",
     "eslint": "^7.32.0",
-    "jest": "^27.1.1"
+    "jest": "^27.1.1",
+    "leaked-handles": "^5.2.0"
   }
 }

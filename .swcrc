@@ -13,7 +13,7 @@
     "lazy": false,
     "noInterop": false
   },
-  "sourceMaps": false,
+  "sourceMaps": true,
   "jsc": {
     "parser": {
       "syntax": "typescript",

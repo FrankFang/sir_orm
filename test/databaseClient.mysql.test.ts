@@ -7,8 +7,8 @@ describe('databaseClient', () => {
     beforeEach(() => {
       client = connectToServer()
     })
-    afterEach(() => {
-      client.destroy()
+    afterEach(async () => {
+      await client.destroy()
     })
     it('can detect a database', async () => {
       expect.assertions(3);

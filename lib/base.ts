@@ -1,5 +1,6 @@
 import { pick } from 'lodash';
 import { DatabaseClient } from "./databaseClient"
+import { Knex } from 'knex'
 interface Indexable {
   [key: string]: unknown
 }
@@ -8,8 +9,67 @@ const returnTrue = () => true
 const returnFalse = () => false
 const returnFirst = (a: nay) => a?.[0] ?? null
 
+class X {
+  proxy: Proxy<Knex.QueryBuilder>
+  builder: Knex.QueryBuilder
+  proxyHandler: ProxyHandler<Knex.QueryBuilder> = {
+    get: (target, prop, receiver) => {
+      switch (prop) {
+        case 'then':
+          throw new Error(`Method .then is not found`)
+          break;
+        case 'promise':
+          return this.execute()
+          break;
+        default:
+          return Reflect.get(this.builder!, prop, receiver)
+          break;
+      }
+    }
+  }
+  constructor(public createBuilder: () => Knex.QueryBuilder) {
+    this.builder = this.createBuilder()
+    this.proxy = new Proxy(this.builder, this.proxyHandler);
+  }
+  execute() {
+    return this.builder.then().finally(() => {
+      this.builder = this.createBuilder()
+      this.proxy = new Proxy(this.builder, this.proxyHandler);
+    })
+  }
+}
+
 export class Base implements Indexable {
   [key: string]: any;
+  static _records: Base[] = []
+  static get records() {
+    this.load()
+    return this._records
+  }
+  static set recards(value: Base[]) {
+    this._records = value
+  }
+  static _queries: X
+  static get queries() {
+    this._queries = this._queries ?? new X(
+      () => {
+        return this.knex
+      })
+    return this._queries
+  }
+  static set queries(value) {
+    this._queries = value
+  }
+  static loaded = false
+  static async load() {
+    if (!this.loaded) {
+      await this.execQueries()
+      this.loaded = true
+    }
+  }
+  static async execQueries() {
+
+  }
   static primaryKey = 'id'
   constructor(callback: Callback);
   constructor(props: Indexable, callback?: Callback);
@@ -32,7 +92,7 @@ export class Base implements Indexable {
     return this.client.knex(this.tableName)
   }
   static get all() {
-    return this.knex.select('*')
+    return this.queries.proxy.select('*')
   }
   static async createMany<T extends typeof Base>(this: T, propsList: any[], callback?: Callback): Promise<InstanceType<T>[]> {
     const result = []
@@ -47,9 +107,11 @@ export class Base implements Indexable {
   static create<T extends typeof Base>(this: T, props?: any, callback?: Callback): Promise<InstanceType<T>> {
     if (typeof props === 'function') { [props, callback] = [{}, props] }
     const obj = new this(props, callback) as InstanceType<T>
-    return obj.save().finally(() => obj)
+    return obj.save().then(() => obj, () => obj)
   }
-  static first<T extends typeof Base>(this: T): Promise<InstanceType<T>> {
+  static async first<T extends typeof Base>(this: T): Promise<InstanceType<T>> {
+    if (this.loaded) { return this.records[0] as InstanceType<T> }
+
     return this.knex.first().then(r => r && new this(r))
   }
   static second<T extends typeof Base>(this: T): Promise<InstanceType<T>> {
@@ -76,16 +138,25 @@ export class Base implements Indexable {
   static update(id: any, props: Indexable) {
     return this.knex.where({ id }).update(props).then(returnTrue, returnFalse)
   }
-  static destroyBy(props: any) {
-    return this.knex.where(props).del().then(returnTrue, returnFalse)
+  static async destroyBy(props: any) {
+    const objects = await this.where(props)
+    for (const o of objects) {
+      if (await o.destroy() === false) return false
+    }
+    return true
   }
   static destroyAll() {
     return this.knex.del().then(returnTrue, returnFalse)
   }
   destroy() {
     const theClass = (this.constructor as unknown as typeof Base)
-    const { primaryKey } = theClass
-    return theClass.destroyBy({ [primaryKey]: (this as any)[primaryKey] })
+    return theClass.knex.where({ id: this.id }).del().then(returnTrue, returnFalse)
+      .then(destroyed => this.#destroyed = destroyed)
+  }
+  #destroyed = false
+  #noRecord = true
+  get isPersisted() {
+    return !(this.#noRecord || this.#destroyed)
   }
   save<T extends Base>(this: T) {
     const theClass = this.constructor as unknown as typeof Base
@@ -93,8 +164,9 @@ export class Base implements Indexable {
       const props = pick(this, Object.keys(cols))
       return theClass.knex.insert(props).then(returnFirst).then(id => {
         (this as Base).id = id
-        return this
-      }) as Promise<T>
+        this.#noRecord = false
+        return true
+      }, returnFalse)
     })
   }
   update(props: Indexable) {

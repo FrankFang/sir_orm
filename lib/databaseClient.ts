@@ -22,9 +22,9 @@ export class DatabaseClient extends EventEmitter {
       pool: config.pool,
     });
   }
-  destroy() {
+  async destroy() {
     this.emit('before:destroy')
-    this.knex.destroy()
+    await this.knex.destroy()
     this.emit('after:destroy')
   }
   testConnection() {
@@ -46,13 +46,18 @@ export class DatabaseClient extends EventEmitter {
     return this.exec(`SHOW DATABASES LIKE ?`, name).then(r => r[0].length !== 0)
   }
   createTableIfNotExists(name: string, columns: Columes, options?: TableOptions) {
-    return this.knex.schema.hasTable(name).then(has =>
+    return this.knex.schema.hasTable(name).then(has => 
       has ? null : this.createTable(name, columns, options)
     )
   }
   createTable(name: string, columns: Columes, options?: TableOptions) {
     return this.knex.schema.createTable(
       name, t => buildTable(t, columns, options))
+  }
+  destroyTable(name: string) {
+    return this.knex.schema.hasTable(name).then(has => 
+      has ? this.knex.schema.dropTable(name) : null
+    )
   }
   exec(sql: string, ...bindings: string[]) {
     return this.knex.raw(sql, bindings)

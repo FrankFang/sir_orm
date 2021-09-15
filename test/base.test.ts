@@ -2,28 +2,34 @@ import { ensureDb, destroyDb, getClient, connectToServer } from './helper';
 import { Base } from '../lib/base';
 describe('Model Class', () => {
   class User extends Base { }
-  beforeEach(async () => {
+  beforeAll(async () => {
     await ensureDb()
     Base.client = getClient()
+  })
+  beforeEach(async () => {
     await Base.client.createTableIfNotExists('users', {
       name: 'string', age: 'int'
     }, { increments: true, timestamps: true })
+    await Base.client.knex.schema.hasTable('users')
   })
-  afterEach(async () => {
+  afterEach(async() => {
+    await Base.client.destroyTable('users')
+  })
+  afterAll(async() => {
     await destroyDb()
-    Base.client.destroy()
+    await Base.client.destroy()
   })
   it('can create a record', async () => {
-    const r1 = await User.all
+    const r1 = await User.all.promise
     await User.create({ name: 'frank' })
-    const r2 = await User.all
+    const r2 = await User.all.promise
     expect(r2.length - r1.length).toEqual(1)
   })
   it('can destroy a record', async () => {
     const user = await User.create({ name: 'frank' })
-    const r1 = await User.all
-    await User.destroyBy({ id: user['id'] })
-    const r2 = await User.all
+    const r1 = await User.all.promise
+    await User.destroyBy({ id: user.id })
+    const r2 = await User.all.promise
     expect(r1.length - r2.length).toEqual(1)
   })
   it('can update a record', async () => {
@@ -47,7 +53,7 @@ describe('Model Class', () => {
       { name: 'jack' },
       { name: 'xiaoming' }
     ])
-    const userList = await User.all
+    const userList = await User.all.promise
     expect(userList.length).toBe(3)
   })
   it('can find one record', async () => {
@@ -57,6 +63,6 @@ describe('Model Class', () => {
       { name: 'xiaoming' }
     ])
     const u4 = await User.find(u2.id)
-    expect(u4.name).toEqual(u2.name) 
+    expect(u4.name).toEqual(u2.name)
   })
 })

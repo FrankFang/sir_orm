@@ -2394,6 +2394,15 @@ knex@^0.95.11:
     tarn "^3.0.1"
     tildify "2.0.0"
 
+leaked-handles@^5.2.0:
+  version "5.2.0"
+  resolved "https://registry.nlark.com/leaked-handles/download/leaked-handles-5.2.0.tgz#67228e90293b7e0ee36c4190e1f541cddece627f"
+  integrity sha1-ZyKOkCk7fg7jbEGQ4fVBzd7OYn8=
+  dependencies:
+    process "^0.10.0"
+    weakmap-shim "^1.1.0"
+    xtend "^4.0.0"
+
 leven@^3.1.0:
   version "3.1.0"
   resolved "https://registry.nlark.com/leven/download/leven-3.1.0.tgz?cache=0&sync_timestamp=1628598084975&other_urls=https%3A%2F%2Fregistry.nlark.com%2Fleven%2Fdownload%2Fleven-3.1.0.tgz#77891de834064cccba82ae7842bb6b14a13ed7f2"
@@ -2734,6 +2743,11 @@ process-nextick-args@~2.0.0:
   version "2.0.1"
   resolved "https://registry.npm.taobao.org/process-nextick-args/download/process-nextick-args-2.0.1.tgz#7820d9b16120cc55ca9ae7792680ae7dba6d7fe2"
   integrity sha1-eCDZsWEgzFXKmud5JoCufbptf+I=
+
+process@^0.10.0:
+  version "0.10.1"
+  resolved "https://registry.nlark.com/process/download/process-0.10.1.tgz#842457cc51cfed72dc775afeeafb8c6034372725"
+  integrity sha1-hCRXzFHP7XLcd1r+6vuMYDQ3JyU=
 
 progress@^2.0.0:
   version "2.0.3"
@@ -3235,6 +3249,11 @@ walker@^1.0.7:
   dependencies:
     makeerror "1.0.x"
 
+weakmap-shim@^1.1.0:
+  version "1.1.1"
+  resolved "https://registry.npm.taobao.org/weakmap-shim/download/weakmap-shim-1.1.1.tgz#d65afd784109b2166e00ff571c33150ec2a40b49"
+  integrity sha1-1lr9eEEJshZuAP9XHDMVDsKkC0k=
+
 webidl-conversions@^5.0.0:
   version "5.0.0"
   resolved "https://registry.nlark.com/webidl-conversions/download/webidl-conversions-5.0.0.tgz#ae59c8a00b121543a2acc65c0434f57b0fc11aff"
@@ -3330,6 +3349,11 @@ xmlchars@^2.2.0:
   version "2.2.0"
   resolved "https://registry.npm.taobao.org/xmlchars/download/xmlchars-2.2.0.tgz#060fe1bcb7f9c76fe2a17db86a9bc3ab894210cb"
   integrity sha1-Bg/hvLf5x2/ioX24apvDq4lCEMs=
+
+xtend@^4.0.0:
+  version "4.0.2"
+  resolved "https://registry.npm.taobao.org/xtend/download/xtend-4.0.2.tgz#bb72779f5fa465186b1f438f674fa347fdb5db54"
+  integrity sha1-u3J3n1+kZRhrH0OPZ0+jR/2121Q=
 
 y18n@^4.0.0:
   version "4.0.3"

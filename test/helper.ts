@@ -1,3 +1,4 @@
+// import 'leaked-handles'
 import { omit } from 'lodash';
 import { DatabaseClient, DatabaseConfig } from './../lib/databaseClient';
 const clientCache: DatabaseClient[] = []
@@ -14,12 +15,9 @@ export const connectToServer = (config?: DatabaseConfig) => {
 export const getClient = (config?: DatabaseConfig) => {
   if (clientCache[0]) { return clientCache[0] }
   const client = clientCache[0] = new DatabaseClient(config ?? testConfig)
-  const onExit = () => client.destroy()
-  client.on('after:destroy', () => {
-    process.off('exit', onExit)
+  client.once('after:destroy', () => {
     delete clientCache[0]
   })
-  process.on('exit', onExit)
   return client
 }
 export const destroyClient = () => {
@@ -29,9 +27,12 @@ export const destroyClient = () => {
 export const ensureDb = async (dbName = testDbName, extra = testDbExtra) => {
   const client = connectToServer()
   const result = await client.createDatabaseIfNotExists(dbName, extra)
-  client.destroy()
+  await client.destroy()
   return result
 }
 export const destroyDb = (dbName = testDbName) => {
-  return getClient().destroyDatabase(dbName)
+  const client = getClient()
+  return client.hasDatabase(dbName).then(has => {
+    return has ? client.destroyDatabase(dbName) : null
+  })
 }
