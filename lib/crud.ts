@@ -1,7 +1,7 @@
 import { BuilderProxy } from './builder_proxy';
 import { returnFirst, returnFalse, plural, camelToSnake, returnTrue } from './helpers';
 import { pick } from 'lodash';
-import { DatabaseClient } from "./databaseClient"
+import { DatabaseClient } from "./database_client"
 type Callback = (obj: Crud) => void
 export class Crud implements Indexable {
   [key: string]: any;

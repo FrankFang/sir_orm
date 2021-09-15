@@ -1,6 +1,6 @@
 // import 'leaked-handles'
 import { omit } from 'lodash';
-import { DatabaseClient, DatabaseConfig } from './../lib/databaseClient';
+import { DatabaseClient, DatabaseConfig } from '../lib/database_client';
 const clientCache: DatabaseClient[] = []
 const testDbName = 'sir_orm_test'
 const testDbExtra = 'CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'

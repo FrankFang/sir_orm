@@ -1,5 +1,5 @@
 import { ensureDb, destroyDb, getClient, connectToServer } from './helper';
-import { DatabaseClient } from '../lib/databaseClient';
+import { DatabaseClient } from '../lib/database_client';
 describe('databaseClient', () => {
   const dbName = 'sir_db_1'
   describe('manipulate database.', () => {
