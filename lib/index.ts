@@ -1,14 +1,5 @@
-import { Base } from './base'
+import { User } from './models/user';
 
-class User extends Base{
-  static hasMany = ['articles', 'comments']
+const u = new User()
+u.articles
 
-}
-class Article extends Base{
-  static belongsTo = 'user'
-}
-class Comments extends Base{
-  static belongsTo = 'user'
-}
-
-export { Base } 

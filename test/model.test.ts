@@ -1,23 +1,7 @@
-import { ensureDb, destroyDb, getClient } from './helper';
+import { ensureDb, destroyDb, getClient, prepareTable } from './helper';
 import { Base } from '../lib/base';
 describe('Model Instance', () => {
-  beforeAll(async () => {
-    await ensureDb()
-    Base.client = getClient()
-  })
-  beforeEach(async () => {
-    await Base.client.createTableIfNotExists('users', {
-      name: 'string', age: 'int'
-    }, { increments: true, timestamps: true })
-    await Base.client.knex.schema.hasTable('users')
-  })
-  afterEach(async() => {
-    await Base.client.destroyTable('users')
-  })
-  afterAll(async() => {
-    await destroyDb()
-    await Base.client.destroy()
-  })
+  prepareTable()
   class User extends Base { }
   it('can create a record with #save method', async () => {
     const user = new User(u => u.name = 'frank')

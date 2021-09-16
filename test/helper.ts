@@ -1,3 +1,4 @@
+import { Base } from './../lib/base';
 // import 'leaked-handles'
 import { omit } from 'lodash';
 import { DatabaseClient, DatabaseConfig } from '../lib/database_client';
@@ -34,5 +35,25 @@ export const destroyDb = (dbName = testDbName) => {
   const client = getClient()
   return client.hasDatabase(dbName).then(has => {
     return has ? client.destroyDatabase(dbName) : null
+  })
+}
+
+export const prepareTable = () => {
+  beforeAll(async () => {
+    await ensureDb()
+    Base.client = getClient()
+  })
+  beforeEach(async () => {
+    await Base.client.createTableIfNotExists('users', {
+      name: 'string', age: 'int'
+    }, { increments: true, timestamps: true })
+    await Base.client.knex.schema.hasTable('users')
+  })
+  afterEach(async () => {
+    await Base.client.destroyTable('users')
+  })
+  afterAll(async () => {
+    await destroyDb()
+    await Base.client.destroy()
   })
 }

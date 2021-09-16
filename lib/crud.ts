@@ -1,6 +1,6 @@
 import { BuilderProxy } from './builder_proxy';
-import { returnFirst, returnFalse, plural, camelToSnake, returnTrue } from './helpers';
-import { pick } from 'lodash';
+import { returnFirst, returnFalse, plural, camelToSnake, returnTrue, returnNull, returnAssociated } from './helpers';
+import { pick, rearg } from 'lodash';
 import { DatabaseClient } from "./database_client"
 type Callback = (obj: Crud) => void
 export class Crud implements Indexable {
@@ -19,12 +19,16 @@ export class Crud implements Indexable {
   static get tableName() {
     return plural(camelToSnake(this.name))
   }
-  constructor(callback: Callback);
-  constructor(props: Indexable, callback?: Callback);
+  constructor(callback?: Callback);
+  constructor(props?: Indexable, callback?: Callback);
   constructor(props?: any, callback?: Callback) {
     if (typeof props === 'function') { [props, callback] = [{}, props] }
     Object.assign(this, props)
     callback?.call(null, this)
+    const initResult = this.init?.()
+    if (initResult instanceof Promise) {
+      throw new Error('init can not return a promise, init can not be a async function')
+    }
   }
   static async createMany<T extends typeof Crud>(this: T, propsList: any[], callback?: Callback): Promise<InstanceType<T>[]> {
     const result = []
@@ -34,14 +38,14 @@ export class Crud implements Indexable {
     }
     return result
   }
-  static create<T extends typeof Crud>(this: T, callback?: Callback): Promise<InstanceType<T>>;
-  static create<T extends typeof Crud>(this: T, props?: Indexable, callback?: Callback): Promise<InstanceType<T>>;
-  static create<T extends typeof Crud>(this: T, props?: any, callback?: Callback): Promise<InstanceType<T>> {
+  static create<T>(this: T, callback?: Callback): Promise<InstanceType<T>>;
+  static create<T>(this: T, props?: Indexable, callback?: Callback): Promise<InstanceType<T>>;
+  static create<T>(this: T, props?: any, callback?: Callback): Promise<InstanceType<T>> {
     if (typeof props === 'function') { [props, callback] = [{}, props] }
-    const obj = new this(props, callback) as InstanceType<T>
-    return obj.save().then(() => obj, () => obj)
+    const obj = new (this as unknown as typeof Crud)(props, callback) as InstanceType<T>
+    return (obj as Crud).save().then(() => obj, () => obj)
   }
-  save<T extends Crud>(this: T) {
+  save<T extends Crud>(this: T): Promise<boolean> {
     const theClass = this.constructor as unknown as typeof Crud
     return theClass.knex.columnInfo().then(cols => {
       const props = pick(this, Object.keys(cols))
@@ -71,8 +75,7 @@ export class Crud implements Indexable {
   }
   static async first<T extends typeof Crud>(this: T): Promise<InstanceType<T>> {
     if (this.loaded) { return this.records[0] as InstanceType<T> }
-
-    return this.knex.first().then(r => r && new this(r))
+    return this.knex.first().then(r => r && new this(r)).then(returnAssociated)
   }
   static second<T extends typeof Crud>(this: T): Promise<InstanceType<T>> {
     return this.knex.limit(1).offset(1).then(r => r && new this(r[0]) as InstanceType<T>)
@@ -83,11 +86,13 @@ export class Crud implements Indexable {
   static head<T extends typeof Crud>(this: T, n: number): Promise<InstanceType<T>[]> {
     return this.knex.limit(n)
   }
-  static find<T extends typeof Crud>(this: T, id: any): Promise<InstanceType<T>> {
-    return this.knex.where({ id }).then(r => r?.[0] ?? null)
+  static find<T extends typeof Crud>(this: T, id: any): Promise<InstanceType<T> | null> {
+    return this.knex.where({ id })
+      .then(r => r?.[0] ? (new this(r[0]) as InstanceType<T>) : null)
   }
-  static findBy<T extends typeof Crud>(this: T, props: any): Promise<InstanceType<T>> {
-    return this.knex.where(props).then(r => r?.[0] ?? null)
+  static findBy<T extends typeof Crud>(this: T, props: any): Promise<InstanceType<T> | null> {
+    return this.knex.where(props).then(r => r?.[0] ? (new this(r[0]) as InstanceType<T>) : null, returnNull)
+
   }
   static where<T extends typeof Crud>(this: T, props: any): Promise<InstanceType<T>[]> {
     return this.knex.where(props).then(rs => rs.map(r => r && new this(r) as InstanceType<T>))
