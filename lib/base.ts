@@ -1,4 +1,4 @@
-import { camelToSnake, returnAssociated } from './helpers';
+import { camelToSnake, returnAssociated, plural } from './helpers';
 import { Crud } from './crud'
 
 export class Base extends Crud {
@@ -13,6 +13,16 @@ export class Base extends Crud {
     for (const c of theClass.belongsTo) {
       this[camelToSnake(c.name)] = null
     }
+    for (const c of theClass.hasMany) {
+      this[plural(camelToSnake(c.name))] = []
+    }
+  }
+  static async first<T extends typeof Crud>(this: T, options = { withAssociation: true }): Promise<InstanceType<T>> {
+    return super.first().then(obj => {
+      const o = obj as unknown as InstanceType<T>
+      return o &&
+        options.withAssociation ? o.loadAssociations() : o
+    })
   }
   static find<T extends typeof Crud>(this: T, id: any, options = { withAssociation: true }): Promise<InstanceType<T> | null> {
     return super.find(id).then(obj => {
@@ -26,6 +36,12 @@ export class Base extends Crud {
       const o = obj as unknown as InstanceType<T>
       return obj &&
         options.withAssociation ? o.loadAssociations() : o
+    })
+  }
+  static where<T extends typeof Crud>(this: T, props: any, options = { withAssociation: true }): Promise<InstanceType<T>[]> {
+    return this.knex.where(props).then(rs => {
+      const list = rs.map(r => new this(r) as InstanceType<T>)
+      return options.withAssociation ? Promise.all(list) : list
     })
   }
   async loadAssociations() {
@@ -42,6 +58,11 @@ export class Base extends Crud {
         await c.find(this[`${key}_id`]) :
         null
     }
+    for (const c of theClass.hasMany) {
+      const keys = plural(camelToSnake(c.name))
+      if (this[keys].length > 0) continue
+      this[keys] = await c.where({ [`${camelToSnake(theClass.name)}_id`]: this.id }, { withAssociation: false })
+    }
     return this
   }
   async save<T extends Crud>(this: T): Promise<boolean> {
@@ -49,8 +70,15 @@ export class Base extends Crud {
     const theClass = (this.constructor as typeof Base)
     for (const c of theClass.hasOne) {
       if (this[camelToSnake(c.name)] === null) { break }
-      this[camelToSnake(c.name)].user = this
+      this[camelToSnake(c.name)][camelToSnake(theClass.name)] = this
       await this[camelToSnake(c.name)].save()
+    }
+    for (const c of theClass.hasMany) {
+      if (this[plural(camelToSnake(c.name))]?.length === 0) { break }
+      for (const obj of this[plural(camelToSnake(c.name))]) {
+        obj[camelToSnake(theClass.name)] = this
+        await obj.save()
+      }
     }
     for (const c of theClass.belongsTo) {
       if (this[camelToSnake(c.name)] === null) { break }

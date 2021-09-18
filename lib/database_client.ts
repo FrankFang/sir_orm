@@ -54,10 +54,11 @@ export class DatabaseClient extends EventEmitter {
     return this.knex.schema.createTable(
       name, t => buildTable(t, columns, options))
   }
-  destroyTable(name: string) {
-    return this.knex.schema.hasTable(name).then(has => 
-      has ? this.knex.schema.dropTable(name) : null
-    )
+  async destroyTable(...names: string[]) {
+    for(const name of names){
+      const has = await this.knex.schema.hasTable(name) 
+      has ? await this.knex.schema.dropTable(name) : null
+    }
   }
   exec(sql: string, ...bindings: string[]) {
     return this.knex.raw(sql, bindings)

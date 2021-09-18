@@ -38,9 +38,9 @@ export class Crud implements Indexable {
     }
     return result
   }
-  static create<T>(this: T, callback?: Callback): Promise<InstanceType<T>>;
-  static create<T>(this: T, props?: Indexable, callback?: Callback): Promise<InstanceType<T>>;
-  static create<T>(this: T, props?: any, callback?: Callback): Promise<InstanceType<T>> {
+  static create<T extends typeof Crud>(this: T, callback?: Callback): Promise<InstanceType<T>>;
+  static create<T extends typeof Crud>(this: T, props?: Indexable, callback?: Callback): Promise<InstanceType<T>>;
+  static create<T extends typeof Crud>(this: T, props?: any, callback?: Callback): Promise<InstanceType<T>> {
     if (typeof props === 'function') { [props, callback] = [{}, props] }
     const obj = new (this as unknown as typeof Crud)(props, callback) as InstanceType<T>
     return (obj as Crud).save().then(() => obj, () => obj)
@@ -73,7 +73,7 @@ export class Crud implements Indexable {
   static get all() {
     return this.queries.proxy.select('*')
   }
-  static async first<T extends typeof Crud>(this: T): Promise<InstanceType<T>> {
+  static async first<T extends typeof Crud>(this: T): Promise<InstanceType<T> | null> {
     if (this.loaded) { return this.records[0] as InstanceType<T> }
     return this.knex.first().then(r => r && new this(r)).then(returnAssociated)
   }
@@ -121,7 +121,7 @@ export class Crud implements Indexable {
   static set recards(value: Crud[]) {
     this._records = value
   }
-  static _queries: X
+  static _queries: BuilderProxy
   static get queries() {
     this._queries = this._queries ?? new BuilderProxy(
       () => {
