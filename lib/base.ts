@@ -2,7 +2,7 @@ import { camelToSnake, returnAssociated, plural } from './helpers';
 import { Crud } from './crud'
 
 export class Base extends Crud {
-  static hasMany: Array<typeof Base> = []
+  static hasMany: Array<(typeof Base) | { class: typeof Base, through: string }> = []
   static hasOne: Array<typeof Base> = []
   static belongsTo: Array<typeof Base> = []
   init() {
@@ -14,7 +14,18 @@ export class Base extends Crud {
       this[camelToSnake(c.name)] = null
     }
     for (const c of theClass.hasMany) {
-      this[plural(camelToSnake(c.name))] = []
+      console.log(theClass.hasMany)
+      if ('class' in c) {
+        console.log('11111111111111111111')
+        console.log('c.class.name')
+        console.log(c.class.name)
+        this[plural(camelToSnake(c.class.name))] = []
+      } else {
+        console.log('22222222222222222222')
+        console.log('c.name')
+        console.log(c.name)
+        this[plural(camelToSnake(c.name))] = []
+      }
     }
   }
   static async first<T extends typeof Crud>(this: T, options = { withAssociation: true }): Promise<InstanceType<T>> {
@@ -59,9 +70,11 @@ export class Base extends Crud {
         null
     }
     for (const c of theClass.hasMany) {
-      const keys = plural(camelToSnake(c.name))
+      const klass = 'class' in c ? c.class : c
+      const className = klass.name
+      const keys = plural(camelToSnake(className))
       if (this[keys].length > 0) continue
-      this[keys] = await c.where({ [`${camelToSnake(theClass.name)}_id`]: this.id }, { withAssociation: false })
+      this[keys] = await klass.where({ [`${camelToSnake(theClass.name)}_id`]: this.id }, { withAssociation: false })
     }
     return this
   }
@@ -74,8 +87,9 @@ export class Base extends Crud {
       await this[camelToSnake(c.name)].save()
     }
     for (const c of theClass.hasMany) {
-      if (this[plural(camelToSnake(c.name))]?.length === 0) { break }
-      for (const obj of this[plural(camelToSnake(c.name))]) {
+      const className = 'class' in c ? c.class.name : c.name
+      if (this[plural(camelToSnake(className))]?.length === 0) { break }
+      for (const obj of this[plural(camelToSnake(className))]) {
         obj[camelToSnake(theClass.name)] = this
         await obj.save()
       }

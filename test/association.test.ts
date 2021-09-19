@@ -77,7 +77,36 @@ describe('Association', () => {
     })
   })
   describe('n:n', () => {
-    class Teacher extends Base{}
-    class Student extends Base{}
+    class Teacher extends Base { }
+    class Student extends Base { }
+    Teacher.hasMany = [{ class: Student, through: 'classes' }]
+    Student.hasMany = [{ class: Teacher, through: 'classes' }]
+    beforeEach(async () => {
+      await Base.client.createTable('teachers', {}, { increments: true, timestamps: true })
+      await Base.client.createTable('students', {}, { increments: true, timestamps: true })
+      await Base.client.createTable('classes', {}, { increments: true, timestamps: true })
+    })
+    afterEach(async () => {
+      await Base.client.destroyTable('teachers', 'students', 'classes')
+    })
+    it('writes assocications', async () => {
+      const t1 = await Teacher.create({})
+      const t2 = await Teacher.create({})
+      const s1 = await Student.create({})
+      const s2 = await Student.create({})
+      t1.students.push(s1)
+      t1.students.push(s2)
+      await t1.save()
+      t2.students.push(s1)
+      t2.students.push(s2)
+      await t2.save()
+      const student1 = await Student.find(s1.id)
+      expect(student1.teachers[0].id).toEqual(t1.id)
+      expect(student1.teachers[1].id).toEqual(t2.id)
+      const student2 = await Student.find(s2.id)
+      expect(student2.teachers[0].id).toEqual(t1.id)
+      expect(student2.teachers[1].id).toEqual(t2.id)
+    })
+
   })
 })
