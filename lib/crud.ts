@@ -47,14 +47,18 @@ export class Crud implements Indexable {
   }
   save<T extends Crud>(this: T): Promise<boolean> {
     const theClass = this.constructor as unknown as typeof Crud
-    return theClass.knex.columnInfo().then(cols => {
-      const props = pick(this, Object.keys(cols))
-      return theClass.knex.insert(props).then(returnFirst).then(id => {
-        (this as Crud).id = id
-        this.#noRecord = false
-        return true
-      }, returnFalse)
-    })
+    if (this.isPersisted) {
+      return Promise.resolve(true)
+    } else {
+      return theClass.knex.columnInfo().then(cols => {
+        const props = pick(this, Object.keys(cols))
+        return theClass.knex.insert(props).then(returnFirst).then(id => {
+          (this as Crud).id = id
+          this.#noRecord = false
+          return true
+        }, (e) => (console.log(e), false))
+      })
+    }
   }
   #destroyed = false
   get isPersisted() {

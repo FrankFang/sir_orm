@@ -2,7 +2,7 @@ import { camelToSnake, returnAssociated, plural } from './helpers';
 import { Crud } from './crud'
 
 export class Base extends Crud {
-  static hasMany: Array<typeof Base> = []
+  static hasMany: Array<(typeof Base) | { class: typeof Base, through: string }> = []
   static hasOne: Array<typeof Base> = []
   static belongsTo: Array<typeof Base> = []
   init() {
@@ -14,7 +14,11 @@ export class Base extends Crud {
       this[camelToSnake(c.name)] = null
     }
     for (const c of theClass.hasMany) {
-      this[plural(camelToSnake(c.name))] = []
+      if ('class' in c) {
+        this[plural(camelToSnake(c.class.name))] = []
+      } else {
+        this[plural(camelToSnake(c.name))] = []
+      }
     }
   }
   static async first<T extends typeof Crud>(this: T, options = { withAssociation: true }): Promise<InstanceType<T>> {
@@ -59,9 +63,21 @@ export class Base extends Crud {
         null
     }
     for (const c of theClass.hasMany) {
-      const keys = plural(camelToSnake(c.name))
+      const klass = 'class' in c ? c.class : c
+      const className = klass.name
+      const keys = plural(camelToSnake(className))
       if (this[keys].length > 0) continue
-      this[keys] = await c.where({ [`${camelToSnake(theClass.name)}_id`]: this.id }, { withAssociation: false })
+      if ('through' in c) {
+        const rs = await Base.client.knex(c.through)
+          .where({ [`${camelToSnake(theClass.name)}_id`]: this.id });
+        for (const r of rs) {
+          this[keys].push(await theClass.find(
+            r[camelToSnake(c.class.name) + '_id'], { withAssociation: false }
+          ))
+        }
+      } else {
+        this[keys] = await klass.where({ [`${camelToSnake(theClass.name)}_id`]: this.id }, { withAssociation: false })
+      }
     }
     return this
   }
@@ -74,10 +90,19 @@ export class Base extends Crud {
       await this[camelToSnake(c.name)].save()
     }
     for (const c of theClass.hasMany) {
-      if (this[plural(camelToSnake(c.name))]?.length === 0) { break }
-      for (const obj of this[plural(camelToSnake(c.name))]) {
+      const className = 'class' in c ? c.class.name : c.name
+      const keys = plural(camelToSnake(className))
+      if (this[keys]?.length === 0) { break }
+      for (const obj of this[plural(camelToSnake(className))]) {
         obj[camelToSnake(theClass.name)] = this
-        await obj.save()
+        if ('through' in c) {
+          await Base.client.knex(c.through).insert({
+            [`${camelToSnake(theClass.name)}_id`]: this.id,
+            [`${camelToSnake(className)}_id`]: obj.id
+          })
+        } else {
+          await obj.save()
+        }
       }
     }
     for (const c of theClass.belongsTo) {
