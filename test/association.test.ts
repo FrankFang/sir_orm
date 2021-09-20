@@ -84,7 +84,7 @@ describe('Association', () => {
     beforeEach(async () => {
       await Base.client.createTable('teachers', {}, { increments: true, timestamps: true })
       await Base.client.createTable('students', {}, { increments: true, timestamps: true })
-      await Base.client.createTable('classes', {}, { increments: true, timestamps: true })
+      await Base.client.createTable('classes', { teacher_id: 'bigint', student_id: 'bigint' }, { increments: true, timestamps: true })
     })
     afterEach(async () => {
       await Base.client.destroyTable('teachers', 'students', 'classes')
@@ -100,6 +100,7 @@ describe('Association', () => {
       t2.students.push(s1)
       t2.students.push(s2)
       await t2.save()
+
       const student1 = await Student.find(s1.id)
       expect(student1.teachers[0].id).toEqual(t1.id)
       expect(student1.teachers[1].id).toEqual(t2.id)

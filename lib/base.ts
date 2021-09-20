@@ -14,16 +14,9 @@ export class Base extends Crud {
       this[camelToSnake(c.name)] = null
     }
     for (const c of theClass.hasMany) {
-      console.log(theClass.hasMany)
       if ('class' in c) {
-        console.log('11111111111111111111')
-        console.log('c.class.name')
-        console.log(c.class.name)
         this[plural(camelToSnake(c.class.name))] = []
       } else {
-        console.log('22222222222222222222')
-        console.log('c.name')
-        console.log(c.name)
         this[plural(camelToSnake(c.name))] = []
       }
     }
@@ -74,7 +67,20 @@ export class Base extends Crud {
       const className = klass.name
       const keys = plural(camelToSnake(className))
       if (this[keys].length > 0) continue
-      this[keys] = await klass.where({ [`${camelToSnake(theClass.name)}_id`]: this.id }, { withAssociation: false })
+      if ('through' in c) {
+        console.log(keys)
+        const x = await Base.client.knex(c.through)
+          .where({ [`${camelToSnake(theClass.name)}_id`]: this.id });
+        console.log(x)
+        this[keys] = await Base.client.knex(c.through)
+          .where({ [`${camelToSnake(theClass.name)}_id`]: this.id })
+          .then(rs => rs.map(r => theClass.find(
+            r[camelToSnake(theClass.name) + '_id'], { withAssociation: false }
+          )))
+        console.log(this[keys])
+      } else {
+        this[keys] = await klass.where({ [`${camelToSnake(theClass.name)}_id`]: this.id }, { withAssociation: false })
+      }
     }
     return this
   }
